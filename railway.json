@@ -2,11 +2,18 @@
   "$schema": "https://railway.json.sh",
   "build": {
     "builder": "nixpacks",
-    "buildCommand": "npm ci --legacy-peer-deps --no-audit --no-fund"
+    "buildCommand": "npm config set build-from-source false && npm ci --legacy-peer-deps --no-audit --no-fund --prefer-offline"
   },
   "deploy": {
     "startCommand": "npm start",
     "restartPolicyType": "on_failure",
-    "restartPolicyMaxRetries": 5
+    "restartPolicyMaxRetries": 5,
+    "healthchecks": {
+      "enabled": false
+    }
+  },
+  "nixpacks": {
+    "providers": ["nodejs-npm"],
+    "nixpkgsVersion": "nixpkgs-23.11"
   }
 }
