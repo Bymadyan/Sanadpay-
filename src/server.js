@@ -17,73 +17,78 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const sessionStore = new SQLiteSessionStore();
+let sessionStore;
 
-app.use(session({
-  store: sessionStore,
-  secret: process.env.SESSION_SECRET || "dev-secret-key",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === "production",
-    httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    sameSite: "lax"
-  }
-}));
+function setupApp() {
+  sessionStore = new SQLiteSessionStore();
 
-app.use((req, res, next) => {
-  res.locals.user = req.session.user || null;
-  next();
-});
+  app.use(session({
+    store: sessionStore,
+    secret: process.env.SESSION_SECRET || "dev-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "lax"
+    }
+  }));
 
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/invoices", invoiceRoutes);
-app.use("/api/payments", paymentRoutes);
+  app.use((req, res, next) => {
+    res.locals.user = req.session.user || null;
+    next();
+  });
 
-app.get("/", (req, res) => {
-  if (req.session.user) {
-    return res.redirect("/dashboard");
-  }
-  res.render("landing");
-});
+  // Routes
+  app.use("/api/auth", authRoutes);
+  app.use("/api/invoices", invoiceRoutes);
+  app.use("/api/payments", paymentRoutes);
 
-app.get("/dashboard", (req, res) => {
-  if (!req.session.user) {
-    return res.redirect("/login");
-  }
-  res.render("dashboard");
-});
+  app.get("/", (req, res) => {
+    if (req.session.user) {
+      return res.redirect("/dashboard");
+    }
+    res.render("landing");
+  });
 
-app.get("/login", (req, res) => {
-  if (req.session.user) {
-    return res.redirect("/dashboard");
-  }
-  res.render("login");
-});
+  app.get("/dashboard", (req, res) => {
+    if (!req.session.user) {
+      return res.redirect("/login");
+    }
+    res.render("dashboard");
+  });
 
-app.get("/signup", (req, res) => {
-  if (req.session.user) {
-    return res.redirect("/dashboard");
-  }
-  res.render("signup");
-});
+  app.get("/login", (req, res) => {
+    if (req.session.user) {
+      return res.redirect("/dashboard");
+    }
+    res.render("login");
+  });
 
-app.get("/invoice/:invoiceNumber", (req, res) => {
-  const { invoiceNumber } = req.params;
-  const invoice = db.prepare("SELECT * FROM invoices WHERE invoice_number = ?").get(invoiceNumber);
-  res.render("invoice-public", { invoice });
-});
+  app.get("/signup", (req, res) => {
+    if (req.session.user) {
+      return res.redirect("/dashboard");
+    }
+    res.render("signup");
+  });
 
-app.use((req, res) => {
-  res.status(404).render("404", { title: "Page Not Found" });
-});
+  app.get("/invoice/:invoiceNumber", (req, res) => {
+    const { invoiceNumber } = req.params;
+    const invoice = db.prepare("SELECT * FROM invoices WHERE invoice_number = ?").get(invoiceNumber);
+    res.render("invoice-public", { invoice });
+  });
+
+  app.use((req, res) => {
+    res.status(404).render("404", { title: "Page Not Found" });
+  });
+}
 
 const PORT = process.env.PORT || 3000;
 
 (async () => {
   await db.initDb();
+  setupApp();
   app.listen(PORT, () => {
     console.log(`🚀 SanadPay running on http://localhost:${PORT}`);
   });
