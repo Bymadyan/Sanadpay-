@@ -1,7 +1,9 @@
+const { EventEmitter } = require("events");
 const db = require("./db");
 
-class SQLiteSessionStore {
+class SQLiteSessionStore extends EventEmitter {
   constructor() {
+    super();
     this.initTable();
   }
 
