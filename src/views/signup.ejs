@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>إنشاء حساب - SanadPay</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="/" style="color: inherit; text-decoration: none;">💳 SanadPay</a></h1>
+    </div>
+  </header>
+
+  <main class="container">
+    <div style="max-width: 400px; margin: 60px auto;">
+      <div style="background: var(--surface); padding: 32px; border-radius: 12px; border: 1px solid var(--border);">
+        <h2 style="margin-bottom: 24px;">إنشاء حساب</h2>
+
+        <form id="signupForm">
+          <div class="form-group">
+            <label>اسم المشروع/الشركة</label>
+            <input type="text" name="business_name" required>
+          </div>
+
+          <div class="form-group">
+            <label>الاسم الشخصي</label>
+            <input type="text" name="owner_name" required>
+          </div>
+
+          <div class="form-group">
+            <label>البريد الإلكتروني</label>
+            <input type="email" name="email" required>
+          </div>
+
+          <div class="form-group">
+            <label>كلمة المرور</label>
+            <input type="password" name="password" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%;">إنشاء حساب</button>
+        </form>
+
+        <p style="text-align: center; margin-top: 16px; color: var(--text-muted);">
+          لديك حساب بالفعل؟ <a href="/login" style="color: var(--primary);">دخول</a>
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData);
+
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          window.location.href = result.redirect;
+        } else {
+          alert(result.error);
+        }
+      } catch (err) {
+        alert('خطأ في إنشاء الحساب');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.json.sh",
+  "build": {
+    "builder": "nixpacks",
+    "buildCommand": "npm ci --legacy-peer-deps --no-audit --no-fund"
+  },
+  "deploy": {
+    "startCommand": "npm start",
+    "restartPolicyType": "on_failure",
+    "restartPolicyMaxRetries": 5
+  }
+}
