@@ -3,6 +3,7 @@ const express = require("express");
 const session = require("express-session");
 const path = require("path");
 const db = require("./db");
+const SQLiteSessionStore = require("./sessionStore");
 
 const authRoutes = require("./routes/auth");
 const invoiceRoutes = require("./routes/invoices");
@@ -16,14 +17,18 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const sessionStore = new SQLiteSessionStore();
+
 app.use(session({
+  store: sessionStore,
   secret: process.env.SESSION_SECRET || "dev-secret-key",
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === "production",
     httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: "lax"
   }
 }));
 
