@@ -2,7 +2,7 @@
   "$schema": "https://railway.json.sh",
   "build": {
     "builder": "nixpacks",
-    "buildCommand": "npm cache clean --force && npm ci --ignore-scripts --legacy-peer-deps --no-audit --no-fund"
+    "buildCommand": "npm install --production"
   },
   "deploy": {
     "startCommand": "npm start",
