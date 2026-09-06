@@ -32,7 +32,12 @@ router.post("/signup", requireGuest, async (req, res) => {
       owner_name
     };
 
-    res.json({ success: true, redirect: "/dashboard" });
+    req.session.save((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Error saving session" });
+      }
+      res.json({ success: true, redirect: "/dashboard" });
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error during signup" });
@@ -64,7 +69,12 @@ router.post("/login", requireGuest, async (req, res) => {
       owner_name: user.owner_name
     };
 
-    res.json({ success: true, redirect: "/dashboard" });
+    req.session.save((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Error saving session" });
+      }
+      res.json({ success: true, redirect: "/dashboard" });
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error during login" });
