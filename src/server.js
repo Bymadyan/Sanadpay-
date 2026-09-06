@@ -76,6 +76,10 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 SanadPay running on http://localhost:${PORT}`);
-});
+
+(async () => {
+  await db.initDb();
+  app.listen(PORT, () => {
+    console.log(`🚀 SanadPay running on http://localhost:${PORT}`);
+  });
+})();
