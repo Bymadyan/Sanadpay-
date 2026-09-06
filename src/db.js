@@ -1,6 +1,5 @@
 const path = require("path");
 const fs = require("fs");
-const initSqlJs = require("sql.js");
 
 const dataDir = path.join(__dirname, "..", "data");
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -15,8 +14,9 @@ const initDb = async () => {
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-    SQL = await initSqlJs();
+    const initSqlJs = require("sql.js");
 
+    SQL = await initSqlJs();
     let data;
     if (fs.existsSync(dbPath)) {
       data = fs.readFileSync(dbPath);
