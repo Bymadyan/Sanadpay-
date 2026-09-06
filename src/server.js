@@ -72,7 +72,7 @@ app.get("/invoice/:invoiceNumber", (req, res) => {
 });
 
 app.use((req, res) => {
-  res.status(404).render("404", { title: "الصفحة غير موجودة" });
+  res.status(404).render("404", { title: "Page Not Found" });
 });
 
 const PORT = process.env.PORT || 3000;

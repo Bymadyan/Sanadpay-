@@ -10,14 +10,14 @@ const router = express.Router();
 router.post("/create", requireAuth, async (req, res) => {
   try {
     if (!stripe) {
-      return res.status(500).json({ error: "Stripe key غير مكون" });
+      return res.status(500).json({ error: "Stripe is not configured" });
     }
 
     const { customer_name, customer_email, amount, description } = req.body;
     const user_id = req.session.user.id;
 
     if (!customer_name || !amount || !description) {
-      return res.status(400).json({ error: "جميع الحقول مطلوبة" });
+      return res.status(400).json({ error: "All fields are required" });
     }
 
     const invoice_number = `INV-${Date.now()}`;
@@ -29,7 +29,7 @@ router.post("/create", requireAuth, async (req, res) => {
           price_data: {
             currency: "sar",
             product_data: {
-              name: `فاتورة - ${customer_name}`,
+              name: `Invoice - ${customer_name}`,
               description: description
             },
             unit_amount: Math.round(amount * 100)
@@ -71,7 +71,7 @@ router.post("/create", requireAuth, async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "خطأ في إنشاء الفاتورة" });
+    res.status(500).json({ error: "Error creating invoice" });
   }
 });
 

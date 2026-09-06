@@ -49,7 +49,7 @@ router.get("/invoice/:invoiceNumber/pdf", (req, res) => {
     ).get(invoiceNumber);
 
     if (!invoice) {
-      return res.status(404).send("الفاتورة غير موجودة");
+      return res.status(404).send("Invoice not found");
     }
 
     const doc = new PDFDocument({ bufferPages: true, lang: "ar" });
@@ -57,34 +57,34 @@ router.get("/invoice/:invoiceNumber/pdf", (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename="invoice-${invoiceNumber}.pdf"`);
     doc.pipe(res);
 
-    doc.fontSize(20).text("فاتورة", { align: "center" });
+    doc.fontSize(20).text("INVOICE", { align: "center" });
     doc.moveDown();
-    doc.fontSize(12).text(`رقم الفاتورة: ${invoice.invoice_number}`);
-    doc.text(`التاريخ: ${new Date(invoice.created_at * 1000).toLocaleDateString('ar-SA')}`);
-    doc.moveDown();
-
-    doc.fontSize(14).text("من:", { underline: true });
-    doc.fontSize(11).text(`الشركة: ${invoice.business_name}`);
-    doc.text(`المالك: ${invoice.owner_name}`);
+    doc.fontSize(12).text(`Invoice #: ${invoice.invoice_number}`);
+    doc.text(`Date: ${new Date(invoice.created_at * 1000).toLocaleDateString('en-US')}`);
     doc.moveDown();
 
-    doc.fontSize(14).text("إلى:", { underline: true });
-    doc.fontSize(11).text(`الاسم: ${invoice.customer_name}`);
-    if (invoice.customer_email) doc.text(`البريد: ${invoice.customer_email}`);
-    if (invoice.customer_phone) doc.text(`الهاتف: ${invoice.customer_phone}`);
+    doc.fontSize(14).text("FROM:", { underline: true });
+    doc.fontSize(11).text(`Business: ${invoice.business_name}`);
+    doc.text(`Owner: ${invoice.owner_name}`);
     doc.moveDown();
 
-    doc.fontSize(14).text("التفاصيل:", { underline: true });
+    doc.fontSize(14).text("TO:", { underline: true });
+    doc.fontSize(11).text(`Name: ${invoice.customer_name}`);
+    if (invoice.customer_email) doc.text(`Email: ${invoice.customer_email}`);
+    if (invoice.customer_phone) doc.text(`Phone: ${invoice.customer_phone}`);
+    doc.moveDown();
+
+    doc.fontSize(14).text("DESCRIPTION:", { underline: true });
     doc.fontSize(11).text(invoice.description);
     doc.moveDown();
 
-    doc.fontSize(16).text(`المبلغ: ${invoice.amount} ريال`, { bold: true });
-    doc.fontSize(11).text(`الحالة: ${invoice.status === 'paid' ? 'مدفوعة' : 'قيد الانتظار'}`);
+    doc.fontSize(16).text(`Amount: ${invoice.amount} SAR`, { bold: true });
+    doc.fontSize(11).text(`Status: ${invoice.status === 'paid' ? 'Paid' : 'Pending'}`);
 
     doc.end();
   } catch (err) {
     console.error(err);
-    res.status(500).send("خطأ في إنشاء PDF");
+    res.status(500).send("Error generating PDF");
   }
 });
 

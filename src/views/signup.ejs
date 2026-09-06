@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>إنشاء حساب - SanadPay</title>
+  <title>Sign Up - SanadPay</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -16,34 +16,34 @@
   <main class="container">
     <div style="max-width: 400px; margin: 60px auto;">
       <div style="background: var(--surface); padding: 32px; border-radius: 12px; border: 1px solid var(--border);">
-        <h2 style="margin-bottom: 24px;">إنشاء حساب</h2>
+        <h2 style="margin-bottom: 24px;">Create Account</h2>
 
         <form id="signupForm">
           <div class="form-group">
-            <label>اسم المشروع/الشركة</label>
+            <label>Business Name</label>
             <input type="text" name="business_name" required>
           </div>
 
           <div class="form-group">
-            <label>الاسم الشخصي</label>
+            <label>Owner Name</label>
             <input type="text" name="owner_name" required>
           </div>
 
           <div class="form-group">
-            <label>البريد الإلكتروني</label>
+            <label>Email Address</label>
             <input type="email" name="email" required>
           </div>
 
           <div class="form-group">
-            <label>كلمة المرور</label>
+            <label>Password</label>
             <input type="password" name="password" required>
           </div>
 
-          <button type="submit" class="btn btn-primary" style="width: 100%;">إنشاء حساب</button>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
         </form>
 
         <p style="text-align: center; margin-top: 16px; color: var(--text-muted);">
-          لديك حساب بالفعل؟ <a href="/login" style="color: var(--primary);">دخول</a>
+          Already have an account? <a href="/login" style="color: var(--primary);">Login</a>
         </p>
       </div>
     </div>
@@ -69,7 +69,7 @@
           alert(result.error);
         }
       } catch (err) {
-        alert('خطأ في إنشاء الحساب');
+        alert('Error creating account');
       }
     });
   </script>

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>الفاتورة - SanadPay</title>
+  <title>Invoice - SanadPay</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -17,32 +17,32 @@
     <div class="payment-section">
       <% if (typeof invoice !== 'undefined' && invoice) { %>
         <h3><%= invoice.customer_name %></h3>
-        <p style="color: var(--text-muted); margin-bottom: 20px;">الفاتورة #<%= invoice.invoice_number %></p>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">Invoice #<%= invoice.invoice_number %></p>
 
-        <div style="text-align: right; margin-bottom: 30px;">
-          <p style="color: var(--text-muted); font-size: 14px;">المبلغ المستحق:</p>
+        <div style="text-align: center; margin-bottom: 30px;">
+          <p style="color: var(--text-muted); font-size: 14px;">Amount Due:</p>
           <p style="font-size: 48px; font-weight: 700; color: var(--primary);">
-            <%= invoice.amount %> <span style="font-size: 24px;">ريال</span>
+            <%= invoice.amount %> <span style="font-size: 24px;">SAR</span>
           </p>
         </div>
 
         <% if (invoice.description) { %>
-          <div style="background: var(--bg); padding: 16px; border-radius: 8px; margin-bottom: 20px; text-align: right;">
-            <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 8px;">البيان:</p>
+          <div style="background: var(--bg); padding: 16px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+            <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 8px;">Description:</p>
             <p style="color: var(--text);"><%=invoice.description %></p>
           </div>
         <% } %>
 
         <% if (invoice.status === 'paid') { %>
           <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-            <p style="color: var(--success); font-weight: 600;">✅ تم استقبال الدفع بنجاح</p>
+            <p style="color: var(--success); font-weight: 600;">✅ Payment Received Successfully</p>
           </div>
-          <a href="/api/payments/invoice/<%= invoice.invoice_number %>/pdf" class="btn btn-primary" style="width: 100%;">تحميل الفاتورة PDF</a>
+          <a href="/api/payments/invoice/<%= invoice.invoice_number %>/pdf" class="btn btn-primary" style="width: 100%;">Download Invoice PDF</a>
         <% } else { %>
-          <a href="<%= invoice.payment_url %>" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 18px;">🔒 الدفع الآن</a>
+          <a href="<%= invoice.payment_url %>" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 18px;">🔒 Pay Now</a>
         <% } %>
       <% } else { %>
-        <p style="color: var(--danger);">الفاتورة غير موجودة</p>
+        <p style="color: var(--danger);">Invoice not found</p>
       <% } %>
     </div>
   </main>

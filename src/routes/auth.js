@@ -10,12 +10,12 @@ router.post("/signup", requireGuest, async (req, res) => {
     const { email, password, business_name, owner_name } = req.body;
 
     if (!email || !password || !business_name || !owner_name) {
-      return res.status(400).json({ error: "جميع الحقول مطلوبة" });
+      return res.status(400).json({ error: "All fields are required" });
     }
 
     const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
     if (existing) {
-      return res.status(400).json({ error: "البريد الإلكتروني مستخدم بالفعل" });
+      return res.status(400).json({ error: "Email is already in use" });
     }
 
     const password_hash = await bcrypt.hash(password, 10);
@@ -35,7 +35,7 @@ router.post("/signup", requireGuest, async (req, res) => {
     res.json({ success: true, redirect: "/dashboard" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "خطأ في التسجيل" });
+    res.status(500).json({ error: "Error during signup" });
   }
 });
 
@@ -44,17 +44,17 @@ router.post("/login", requireGuest, async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: "البريد والكلمة المرور مطلوبان" });
+      return res.status(400).json({ error: "Email and password are required" });
     }
 
     const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
     if (!user) {
-      return res.status(401).json({ error: "بيانات غير صحيحة" });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
-      return res.status(401).json({ error: "بيانات غير صحيحة" });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     req.session.user = {
@@ -67,7 +67,7 @@ router.post("/login", requireGuest, async (req, res) => {
     res.json({ success: true, redirect: "/dashboard" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "خطأ في تسجيل الدخول" });
+    res.status(500).json({ error: "Error during login" });
   }
 });
 
