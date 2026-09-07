@@ -3,7 +3,6 @@ const express = require("express");
 const session = require("express-session");
 const path = require("path");
 const db = require("./db");
-const SQLiteSessionStore = require("./sessionStore");
 
 const authRoutes = require("./routes/auth");
 const invoiceRoutes = require("./routes/invoices");
@@ -25,13 +24,8 @@ async function start() {
     await db.initDb();
     console.log("✓ Database initialized");
 
-    // Create session store
-    const sessionStore = new SQLiteSessionStore();
-    console.log("✓ Session store initialized");
-
-    // Setup session middleware
+    // Setup session middleware with MemoryStore
     app.use(session({
-      store: sessionStore,
       secret: process.env.SESSION_SECRET || "dev-secret-key",
       resave: false,
       saveUninitialized: false,

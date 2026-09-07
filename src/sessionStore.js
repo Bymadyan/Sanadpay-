@@ -83,6 +83,18 @@ class SQLiteSessionStore extends EventEmitter {
       }
     });
   }
+
+  touch(sid, sess, callback) {
+    setImmediate(() => {
+      try {
+        const expire = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60);
+        db.prepare("UPDATE sessions SET expire = ? WHERE sid = ?").run(expire, sid);
+        callback(null);
+      } catch (err) {
+        callback(err);
+      }
+    });
+  }
 }
 
 module.exports = SQLiteSessionStore;
