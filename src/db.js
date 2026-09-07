@@ -124,6 +124,7 @@ const dbWrapper = {
     if (!db) throw new Error("Database not initialized");
     db.run(sql);
     saveDb();
+    console.log("DB exec completed:", sql.substring(0, 50));
   }
 };
 
