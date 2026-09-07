@@ -36,6 +36,9 @@ function setupApp() {
   }));
 
   app.use((req, res, next) => {
+    console.log(`\n🔗 ${req.method} ${req.path}`);
+    console.log(`   Session ID: ${req.sessionID}`);
+    console.log(`   User: ${req.session.user ? req.session.user.email : "anonymous"}`);
     res.locals.user = req.session.user || null;
     next();
   });
@@ -53,16 +56,22 @@ function setupApp() {
   });
 
   app.get("/dashboard", (req, res) => {
+    console.log("📊 Dashboard requested - session.user:", req.session.user ? `${req.session.user.email}` : "missing");
     if (!req.session.user) {
+      console.log("  → No user session, redirecting to /login");
       return res.redirect("/login");
     }
+    console.log("  → Rendering dashboard for:", req.session.user.email);
     res.render("dashboard");
   });
 
   app.get("/login", (req, res) => {
+    console.log("🔓 Login page requested - session.user:", req.session.user ? "exists" : "missing");
     if (req.session.user) {
+      console.log("  → User already logged in, redirecting to /dashboard");
       return res.redirect("/dashboard");
     }
+    console.log("  → Rendering login page");
     res.render("login");
   });
 
