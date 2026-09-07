@@ -8,69 +8,71 @@ const dbPath = path.join(dataDir, "sanadpay.sqlite");
 
 let db = null;
 let SQL = null;
-let initPromise = null;
 
 const initDb = async () => {
-  if (initPromise) return initPromise;
+  if (db) return;
 
-  initPromise = (async () => {
-    const initSqlJs = require("sql.js");
+  const initSqlJs = require("sql.js");
+  SQL = await initSqlJs();
 
-    SQL = await initSqlJs();
-    let data;
-    if (fs.existsSync(dbPath)) {
-      data = fs.readFileSync(dbPath);
-    }
+  let data;
+  if (fs.existsSync(dbPath)) {
+    data = fs.readFileSync(dbPath);
+  }
 
-    db = new SQL.Database(data);
+  db = new SQL.Database(data);
 
-    db.run(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        business_name TEXT,
-        owner_name TEXT,
-        phone TEXT,
-        stripe_account_id TEXT,
-        created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
-      );
+  // Create tables
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      business_name TEXT,
+      owner_name TEXT,
+      phone TEXT,
+      stripe_account_id TEXT,
+      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+    );
 
-      CREATE TABLE IF NOT EXISTS invoices (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL REFERENCES users(id),
-        invoice_number TEXT NOT NULL,
-        customer_name TEXT NOT NULL,
-        customer_email TEXT,
-        customer_phone TEXT,
-        description TEXT,
-        amount REAL NOT NULL,
-        currency TEXT NOT NULL DEFAULT 'SAR',
-        status TEXT NOT NULL DEFAULT 'pending',
-        payment_url TEXT,
-        stripe_session_id TEXT UNIQUE,
-        payment_received_at INTEGER,
-        pdf_generated_at INTEGER,
-        created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
-        updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
-      );
+    CREATE TABLE IF NOT EXISTS invoices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      invoice_number TEXT NOT NULL,
+      customer_name TEXT NOT NULL,
+      customer_email TEXT,
+      customer_phone TEXT,
+      description TEXT,
+      amount REAL NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'SAR',
+      status TEXT NOT NULL DEFAULT 'pending',
+      payment_url TEXT,
+      stripe_session_id TEXT UNIQUE,
+      payment_received_at INTEGER,
+      pdf_generated_at INTEGER,
+      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+      updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+    );
 
-      CREATE TABLE IF NOT EXISTS payments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        invoice_id INTEGER NOT NULL REFERENCES invoices(id),
-        stripe_session_id TEXT UNIQUE,
-        stripe_payment_intent_id TEXT,
-        amount REAL NOT NULL,
-        status TEXT NOT NULL DEFAULT 'pending',
-        paid_at INTEGER,
-        created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
-      );
-    `);
+    CREATE TABLE IF NOT EXISTS payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      invoice_id INTEGER NOT NULL REFERENCES invoices(id),
+      stripe_session_id TEXT UNIQUE,
+      stripe_payment_intent_id TEXT,
+      amount REAL NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      paid_at INTEGER,
+      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+    );
 
-    saveDb();
-  })();
+    CREATE TABLE IF NOT EXISTS sessions (
+      sid TEXT PRIMARY KEY,
+      sess TEXT NOT NULL,
+      expire INTEGER NOT NULL
+    );
+  `);
 
-  return initPromise;
+  saveDb();
 };
 
 const saveDb = () => {
@@ -124,7 +126,6 @@ const dbWrapper = {
     if (!db) throw new Error("Database not initialized");
     db.run(sql);
     saveDb();
-    console.log("DB exec completed:", sql.substring(0, 50));
   }
 };
 
