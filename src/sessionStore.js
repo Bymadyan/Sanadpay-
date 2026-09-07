@@ -24,18 +24,20 @@ class SQLiteSessionStore extends EventEmitter {
         Math.floor(Date.now() / 1000)
       );
 
-      if (row) {
+      if (row && row.sess) {
         try {
           const sess = JSON.parse(row.sess);
           callback(null, sess);
         } catch (err) {
-          callback(err);
+          console.error("Session parse error:", err, row);
+          callback(null, null);
         }
       } else {
         callback(null, null);
       }
     } catch (err) {
-      callback(err);
+      console.error("Session get error:", err);
+      callback(null, null);
     }
   }
 
@@ -60,8 +62,10 @@ class SQLiteSessionStore extends EventEmitter {
         );
       }
 
+      console.log("Session saved:", sid, sess.user ? "with user" : "guest");
       if (callback) callback(null);
     } catch (err) {
+      console.error("Session set error:", err);
       if (callback) callback(err);
     }
   }
