@@ -26,23 +26,50 @@ async function start() {
     await db.initDb();
     console.log("✓ Database initialized");
 
-    // Custom in-memory session store that persists between requests
-    const sessions = {};
+    // Database-backed session store using SQLite
     const sessionStore = {
       get(sid, callback) {
-        callback(null, sessions[sid] || null);
+        try {
+          const row = db.prepare("SELECT sess FROM sessions WHERE sid = ? AND expire > ?").get(sid, Math.floor(Date.now() / 1000));
+          if (row) {
+            const sess = JSON.parse(row.sess);
+            callback(null, sess);
+          } else {
+            callback(null, null);
+          }
+        } catch (err) {
+          callback(err);
+        }
       },
       set(sid, sess, callback) {
-        sessions[sid] = sess;
-        callback(null);
+        try {
+          const expire = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60);
+          const sessJson = JSON.stringify(sess);
+
+          // Check if session exists
+          const existing = db.prepare("SELECT sid FROM sessions WHERE sid = ?").get(sid);
+          if (existing) {
+            db.prepare("UPDATE sessions SET sess = ?, expire = ? WHERE sid = ?").run(sessJson, expire, sid);
+          } else {
+            db.prepare("INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, ?)").run(sid, sessJson, expire);
+          }
+          callback(null);
+        } catch (err) {
+          console.error("Session store set error:", err);
+          callback(err);
+        }
       },
       destroy(sid, callback) {
-        delete sessions[sid];
-        callback(null);
+        try {
+          db.prepare("DELETE FROM sessions WHERE sid = ?").run(sid);
+          callback(null);
+        } catch (err) {
+          callback(err);
+        }
       }
     };
 
-    // Setup session middleware with custom store
+    // Setup session middleware with database store
     app.use(session({
       secret: process.env.SESSION_SECRET || "dev-secret-key",
       resave: false,
