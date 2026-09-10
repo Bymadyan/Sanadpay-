@@ -3,6 +3,7 @@ const express = require("express");
 const session = require("express-session");
 const EventEmitter = require("events");
 const path = require("path");
+const fs = require("fs");
 const db = require("./db");
 
 // Force rebuild trigger - 2026-09-10T23:45:00Z
@@ -24,6 +25,18 @@ const PORT = process.env.PORT || 3000;
 async function start() {
   try {
     console.log(`🚀 Starting SanadPay (NODE_ENV: ${process.env.NODE_ENV})`);
+
+    // Check if views directory exists
+    const viewsPath = path.join(__dirname, "views");
+    const publicPath = path.join(__dirname, "public");
+    console.log(`📁 Views path: ${viewsPath}`);
+    console.log(`📁 Views exists: ${fs.existsSync(viewsPath)}`);
+    if (fs.existsSync(viewsPath)) {
+      const files = fs.readdirSync(viewsPath);
+      console.log(`📄 Views files: ${files.join(", ")}`);
+    }
+    console.log(`📁 Public exists: ${fs.existsSync(publicPath)}`);
+
     // Initialize database first
     await db.initDb();
     console.log("✓ Database initialized");
