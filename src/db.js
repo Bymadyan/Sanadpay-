@@ -12,12 +12,18 @@ let SQL = null;
 const initDb = async () => {
   if (db) return;
 
+  console.log(`📦 Initializing database at ${dbPath}`);
+
   const initSqlJs = require("sql.js");
   SQL = await initSqlJs();
 
   let data;
   if (fs.existsSync(dbPath)) {
+    const stat = fs.statSync(dbPath);
     data = fs.readFileSync(dbPath);
+    console.log(`✅ Loaded existing database (${stat.size} bytes)`);
+  } else {
+    console.log(`📝 Creating new database`);
   }
 
   db = new SQL.Database(data);
@@ -81,9 +87,12 @@ const saveDb = () => {
       const data = db.export();
       const buffer = Buffer.from(data);
       fs.writeFileSync(dbPath, buffer);
-      console.log("✓ Database saved");
+      const stat = fs.statSync(dbPath);
+      console.log(`✓ Database saved to ${dbPath} (${stat.size} bytes)`);
     } catch (err) {
-      console.error("Error saving database:", err);
+      console.error("❌ Error saving database:", err.message);
+      console.error("Path:", dbPath);
+      console.error("DataDir exists:", fs.existsSync(dataDir));
     }
   }
 };

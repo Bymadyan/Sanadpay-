@@ -23,6 +23,7 @@ const PORT = process.env.PORT || 3000;
 
 async function start() {
   try {
+    console.log(`🚀 Starting SanadPay (NODE_ENV: ${process.env.NODE_ENV})`);
     // Initialize database first
     await db.initDb();
     console.log("✓ Database initialized");
@@ -44,6 +45,40 @@ async function start() {
     app.use((req, res, next) => {
       res.locals.user = req.session.user || null;
       next();
+    });
+
+    // Diagnostic endpoint
+    app.get("/api/debug/status", (req, res) => {
+      const fs = require("fs");
+      const path = require("path");
+      const dataDir = path.join(__dirname, "..", "data");
+      const dbPath = path.join(dataDir, "sanadpay.sqlite");
+
+      let dbStats = null;
+      if (fs.existsSync(dbPath)) {
+        const stat = fs.statSync(dbPath);
+        dbStats = {
+          exists: true,
+          size: stat.size,
+          modified: stat.mtime
+        };
+      }
+
+      const users = db.prepare("SELECT id, email, business_name, owner_name FROM users").all();
+
+      res.json({
+        status: "ok",
+        node_env: process.env.NODE_ENV,
+        session: req.session.user || null,
+        database: {
+          dbPath,
+          dataDir,
+          dataDirExists: fs.existsSync(dataDir),
+          dbFile: dbStats,
+          userCount: users.length,
+          users
+        }
+      });
     });
 
     // API Routes
