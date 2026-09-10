@@ -5,7 +5,7 @@ const { requireGuest, requireAuth } = require("../middleware");
 
 const router = express.Router();
 
-router.post("/signup", requireGuest, async (req, res) => {
+router.post("/signup", async (req, res) => {
   try {
     const { email, password, business_name, owner_name } = req.body;
 
@@ -41,7 +41,7 @@ router.post("/signup", requireGuest, async (req, res) => {
   }
 });
 
-router.post("/login", requireGuest, async (req, res) => {
+router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -68,6 +68,7 @@ router.post("/login", requireGuest, async (req, res) => {
 
     req.session.save((err) => {
       if (err) {
+        console.error("Session save error:", err);
         return res.status(500).json({ error: "Error saving session" });
       }
       res.json({ success: true, redirect: "/dashboard" });

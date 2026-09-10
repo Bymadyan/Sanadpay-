@@ -26,11 +26,28 @@ async function start() {
     await db.initDb();
     console.log("✓ Database initialized");
 
-    // Setup session middleware with MemoryStore
+    // Custom in-memory session store that persists between requests
+    const sessions = {};
+    const sessionStore = {
+      get(sid, callback) {
+        callback(null, sessions[sid] || null);
+      },
+      set(sid, sess, callback) {
+        sessions[sid] = sess;
+        callback(null);
+      },
+      destroy(sid, callback) {
+        delete sessions[sid];
+        callback(null);
+      }
+    };
+
+    // Setup session middleware with custom store
     app.use(session({
       secret: process.env.SESSION_SECRET || "dev-secret-key",
       resave: false,
       saveUninitialized: false,
+      store: sessionStore,
       cookie: {
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
