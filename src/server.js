@@ -1,12 +1,9 @@
 require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
-const EventEmitter = require("events");
 const path = require("path");
 const fs = require("fs");
 const db = require("./db");
-
-// Force rebuild trigger - 2026-09-11T01:15:00Z
 
 const authRoutes = require("./routes/auth");
 const invoiceRoutes = require("./routes/invoices");
@@ -22,30 +19,66 @@ app.use(express.urlencoded({ extended: true }));
 
 const PORT = process.env.PORT || 3000;
 
+// Custom Database-backed Session Store
+class DbSessionStore extends require("events").EventEmitter {
+  constructor() {
+    super();
+  }
+
+  get(sid, callback) {
+    try {
+      const sess = db.prepare("SELECT sess FROM sessions WHERE sid = ?").get(sid);
+      if (!sess) return callback(null, null);
+      const data = JSON.parse(sess.sess);
+      callback(null, data);
+    } catch (err) {
+      callback(err);
+    }
+  }
+
+  set(sid, sess, callback) {
+    try {
+      const expire = (sess.cookie && sess.cookie.expires) ? sess.cookie.expires.getTime() : Date.now() + 7 * 24 * 60 * 60 * 1000;
+      const sessJson = JSON.stringify(sess);
+
+      const existing = db.prepare("SELECT sid FROM sessions WHERE sid = ?").get(sid);
+      if (existing) {
+        db.prepare("UPDATE sessions SET sess = ?, expire = ? WHERE sid = ?").run(sessJson, expire, sid);
+      } else {
+        db.prepare("INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, ?)").run(sid, sessJson, expire);
+      }
+
+      if (callback) callback(null);
+    } catch (err) {
+      if (callback) callback(err);
+    }
+  }
+
+  destroy(sid, callback) {
+    try {
+      db.prepare("DELETE FROM sessions WHERE sid = ?").run(sid);
+      if (callback) callback(null);
+    } catch (err) {
+      if (callback) callback(err);
+    }
+  }
+}
+
 async function start() {
   try {
     console.log(`🚀 Starting SanadPay (NODE_ENV: ${process.env.NODE_ENV})`);
-
-    // Check if views directory exists
-    const viewsPath = path.join(__dirname, "views");
-    const publicPath = path.join(__dirname, "public");
-    console.log(`📁 Views path: ${viewsPath}`);
-    console.log(`📁 Views exists: ${fs.existsSync(viewsPath)}`);
-    if (fs.existsSync(viewsPath)) {
-      const files = fs.readdirSync(viewsPath);
-      console.log(`📄 Views files: ${files.join(", ")}`);
-    }
-    console.log(`📁 Public exists: ${fs.existsSync(publicPath)}`);
 
     // Initialize database first
     await db.initDb();
     console.log("✓ Database initialized");
 
-    // Use default MemoryStore - simpler and works better
+    // Use database-backed session store
+    const sessionStore = new DbSessionStore();
     app.use(session({
+      store: sessionStore,
       secret: process.env.SESSION_SECRET || "dev-secret-key",
-      resave: true,
-      saveUninitialized: true,
+      resave: false,
+      saveUninitialized: false,
       cookie: {
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
