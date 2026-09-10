@@ -6,7 +6,7 @@ const path = require("path");
 const fs = require("fs");
 const db = require("./db");
 
-// Force rebuild trigger - 2026-09-10T23:45:00Z
+// Force rebuild trigger - 2026-09-11T01:15:00Z
 
 const authRoutes = require("./routes/auth");
 const invoiceRoutes = require("./routes/invoices");
