@@ -4,6 +4,8 @@ const session = require("express-session");
 const path = require("path");
 const db = require("./db");
 
+// Force rebuild trigger - 2026-09-10T23:45:00Z
+
 const authRoutes = require("./routes/auth");
 const invoiceRoutes = require("./routes/invoices");
 const paymentRoutes = require("./routes/payments");
