@@ -77,9 +77,14 @@ const initDb = async () => {
 
 const saveDb = () => {
   if (db) {
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    fs.writeFileSync(dbPath, buffer);
+    try {
+      const data = db.export();
+      const buffer = Buffer.from(data);
+      fs.writeFileSync(dbPath, buffer);
+      console.log("✓ Database saved");
+    } catch (err) {
+      console.error("Error saving database:", err);
+    }
   }
 };
 
