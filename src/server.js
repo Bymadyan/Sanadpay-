@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
+const EventEmitter = require("events");
 const path = require("path");
 const db = require("./db");
 
@@ -26,55 +27,11 @@ async function start() {
     await db.initDb();
     console.log("✓ Database initialized");
 
-    // Database-backed session store using SQLite
-    const sessionStore = {
-      get(sid, callback) {
-        try {
-          const row = db.prepare("SELECT sess FROM sessions WHERE sid = ? AND expire > ?").get(sid, Math.floor(Date.now() / 1000));
-          if (row) {
-            const sess = JSON.parse(row.sess);
-            callback(null, sess);
-          } else {
-            callback(null, null);
-          }
-        } catch (err) {
-          callback(err);
-        }
-      },
-      set(sid, sess, callback) {
-        try {
-          const expire = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60);
-          const sessJson = JSON.stringify(sess);
-
-          // Check if session exists
-          const existing = db.prepare("SELECT sid FROM sessions WHERE sid = ?").get(sid);
-          if (existing) {
-            db.prepare("UPDATE sessions SET sess = ?, expire = ? WHERE sid = ?").run(sessJson, expire, sid);
-          } else {
-            db.prepare("INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, ?)").run(sid, sessJson, expire);
-          }
-          callback(null);
-        } catch (err) {
-          console.error("Session store set error:", err);
-          callback(err);
-        }
-      },
-      destroy(sid, callback) {
-        try {
-          db.prepare("DELETE FROM sessions WHERE sid = ?").run(sid);
-          callback(null);
-        } catch (err) {
-          callback(err);
-        }
-      }
-    };
-
-    // Setup session middleware with database store
+    // Use default MemoryStore - simpler and works better
     app.use(session({
       secret: process.env.SESSION_SECRET || "dev-secret-key",
-      resave: false,
-      saveUninitialized: false,
-      store: sessionStore,
+      resave: true,
+      saveUninitialized: true,
       cookie: {
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
