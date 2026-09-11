@@ -5,6 +5,24 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? require("stripe")(process.env.STRIPE_SECRET_KEY)
   : null;
 
+function dbRun(query, params) {
+  return new Promise((resolve, reject) => {
+    db.run(query, params, function(err) {
+      if (err) reject(err);
+      else resolve(this);
+    });
+  });
+}
+
+function dbAll(query, params) {
+  return new Promise((resolve, reject) => {
+    db.all(query, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows);
+    });
+  });
+}
+
 async function createInvoice(req, res) {
   try {
     if (!stripe) {
@@ -14,7 +32,6 @@ async function createInvoice(req, res) {
     const { customer_name, customer_email, amount, description } = req.body;
     const user_id = req.session.user.id;
 
-    // Validation
     if (!customer_name || !amount || !description) {
       return res.status(400).json({ error: "جميع الحقول مطلوبة" });
     }
@@ -26,7 +43,6 @@ async function createInvoice(req, res) {
     const invoice_number = `INV-${Date.now()}`;
 
     try {
-      // Create Stripe session
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [{
@@ -46,26 +62,14 @@ async function createInvoice(req, res) {
         customer_email: customer_email || undefined
       });
 
-      // Save invoice to database
-      const stmt = db.prepare(`
-        INSERT INTO invoices (
+      await dbRun(
+        `INSERT INTO invoices (
           user_id, invoice_number, customer_name, customer_email,
           amount, description, payment_url, stripe_session_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-      stmt.run(
-        user_id,
-        invoice_number,
-        customer_name,
-        customer_email,
-        amount,
-        description,
-        session.url,
-        session.id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [user_id, invoice_number, customer_name, customer_email, amount, description, session.url, session.id]
       );
 
-      // Generate QR code
       const qr = await QRCode.toDataURL(session.url);
 
       res.json({
@@ -84,15 +88,14 @@ async function createInvoice(req, res) {
   }
 }
 
-function listInvoices(req, res) {
+async function listInvoices(req, res) {
   try {
     const user_id = req.session.user.id;
 
-    const invoices = db.prepare(`
-      SELECT * FROM invoices
-      WHERE user_id = ?
-      ORDER BY created_at DESC
-    `).all(user_id);
+    const invoices = await dbAll(
+      `SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC`,
+      [user_id]
+    );
 
     res.json({ invoices });
   } catch (err) {

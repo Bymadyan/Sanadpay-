@@ -1,12 +1,29 @@
 const bcrypt = require("bcryptjs");
 const db = require("./database");
 
+function dbGet(query, params) {
+  return new Promise((resolve, reject) => {
+    db.get(query, params, (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+}
+
+function dbRun(query, params) {
+  return new Promise((resolve, reject) => {
+    db.run(query, params, function(err) {
+      if (err) reject(err);
+      else resolve(this);
+    });
+  });
+}
+
 // Signup
-function signup(req, res) {
+async function signup(req, res) {
   try {
     const { email, password, business_name, owner_name } = req.body;
 
-    // Validation
     if (!email || !password || !business_name || !owner_name) {
       return res.status(400).json({ error: "جميع الحقول مطلوبة" });
     }
@@ -15,24 +32,19 @@ function signup(req, res) {
       return res.status(400).json({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" });
     }
 
-    // Check if email exists
-    const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
+    const existing = await dbGet("SELECT id FROM users WHERE email = ?", [email]);
     if (existing) {
       return res.status(400).json({ error: "البريد الإلكتروني مستخدم بالفعل" });
     }
 
-    // Hash password
     const password_hash = bcrypt.hashSync(password, 10);
-
-    // Insert user
-    const stmt = db.prepare(
-      "INSERT INTO users (email, password_hash, business_name, owner_name) VALUES (?, ?, ?, ?)"
+    const result = await dbRun(
+      "INSERT INTO users (email, password_hash, business_name, owner_name) VALUES (?, ?, ?, ?)",
+      [email, password_hash, business_name, owner_name]
     );
-    const result = stmt.run(email, password_hash, business_name, owner_name);
 
-    // Set session
     req.session.user = {
-      id: result.lastInsertRowid,
+      id: result.lastID,
       email,
       business_name,
       owner_name
@@ -46,28 +58,24 @@ function signup(req, res) {
 }
 
 // Login
-function login(req, res) {
+async function login(req, res) {
   try {
     const { email, password } = req.body;
 
-    // Validation
     if (!email || !password) {
       return res.status(400).json({ error: "البريد والرقم السري مطلوبان" });
     }
 
-    // Find user
-    const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+    const user = await dbGet("SELECT * FROM users WHERE email = ?", [email]);
     if (!user) {
       return res.status(401).json({ error: "بيانات دخول غير صحيحة" });
     }
 
-    // Verify password
     const valid = bcrypt.compareSync(password, user.password_hash);
     if (!valid) {
       return res.status(401).json({ error: "بيانات دخول غير صحيحة" });
     }
 
-    // Set session
     req.session.user = {
       id: user.id,
       email: user.email,
