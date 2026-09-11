@@ -1,29 +1,11 @@
-const db = require("./database");
+const { createInvoice, getUserInvoices } = require("./database");
 const QRCode = require("qrcode");
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? require("stripe")(process.env.STRIPE_SECRET_KEY)
   : null;
 
-function dbRun(query, params) {
-  return new Promise((resolve, reject) => {
-    db.run(query, params, function(err) {
-      if (err) reject(err);
-      else resolve(this);
-    });
-  });
-}
-
-function dbAll(query, params) {
-  return new Promise((resolve, reject) => {
-    db.all(query, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows);
-    });
-  });
-}
-
-async function createInvoice(req, res) {
+async function createInvoiceEndpoint(req, res) {
   try {
     if (!stripe) {
       return res.status(500).json({ error: "Stripe غير مفعل" });
@@ -62,13 +44,20 @@ async function createInvoice(req, res) {
         customer_email: customer_email || undefined
       });
 
-      await dbRun(
-        `INSERT INTO invoices (
-          user_id, invoice_number, customer_name, customer_email,
-          amount, description, payment_url, stripe_session_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [user_id, invoice_number, customer_name, customer_email, amount, description, session.url, session.id]
-      );
+      createInvoice({
+        user_id,
+        invoice_number,
+        customer_name,
+        customer_email,
+        customer_phone: null,
+        description,
+        amount,
+        currency: "SAR",
+        status: "pending",
+        payment_url: session.url,
+        stripe_session_id: session.id,
+        payment_received_at: null
+      });
 
       const qr = await QRCode.toDataURL(session.url);
 
@@ -91,12 +80,7 @@ async function createInvoice(req, res) {
 async function listInvoices(req, res) {
   try {
     const user_id = req.session.user.id;
-
-    const invoices = await dbAll(
-      `SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC`,
-      [user_id]
-    );
-
+    const invoices = getUserInvoices(user_id);
     res.json({ invoices });
   } catch (err) {
     console.error("List invoices error:", err);
@@ -104,4 +88,4 @@ async function listInvoices(req, res) {
   }
 }
 
-module.exports = { createInvoice, listInvoices };
+module.exports = { createInvoice: createInvoiceEndpoint, listInvoices };

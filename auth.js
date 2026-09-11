@@ -1,25 +1,6 @@
 const bcrypt = require("bcryptjs");
-const db = require("./database");
+const { findUser, createUser } = require("./database");
 
-function dbGet(query, params) {
-  return new Promise((resolve, reject) => {
-    db.get(query, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
-}
-
-function dbRun(query, params) {
-  return new Promise((resolve, reject) => {
-    db.run(query, params, function(err) {
-      if (err) reject(err);
-      else resolve(this);
-    });
-  });
-}
-
-// Signup
 async function signup(req, res) {
   try {
     const { email, password, business_name, owner_name } = req.body;
@@ -32,22 +13,26 @@ async function signup(req, res) {
       return res.status(400).json({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" });
     }
 
-    const existing = await dbGet("SELECT id FROM users WHERE email = ?", [email]);
-    if (existing) {
+    if (findUser(email)) {
       return res.status(400).json({ error: "البريد الإلكتروني مستخدم بالفعل" });
     }
 
     const password_hash = bcrypt.hashSync(password, 10);
-    const result = await dbRun(
-      "INSERT INTO users (email, password_hash, business_name, owner_name) VALUES (?, ?, ?, ?)",
-      [email, password_hash, business_name, owner_name]
-    );
+
+    const user = createUser({
+      email,
+      password_hash,
+      business_name,
+      owner_name,
+      phone: null,
+      stripe_account_id: null
+    });
 
     req.session.user = {
-      id: result.lastID,
-      email,
-      business_name,
-      owner_name
+      id: user.id,
+      email: user.email,
+      business_name: user.business_name,
+      owner_name: user.owner_name
     };
 
     res.json({ success: true, message: "تم إنشاء الحساب بنجاح" });
@@ -57,7 +42,6 @@ async function signup(req, res) {
   }
 }
 
-// Login
 async function login(req, res) {
   try {
     const { email, password } = req.body;
@@ -66,7 +50,7 @@ async function login(req, res) {
       return res.status(400).json({ error: "البريد والرقم السري مطلوبان" });
     }
 
-    const user = await dbGet("SELECT * FROM users WHERE email = ?", [email]);
+    const user = findUser(email);
     if (!user) {
       return res.status(401).json({ error: "بيانات دخول غير صحيحة" });
     }
@@ -90,7 +74,6 @@ async function login(req, res) {
   }
 }
 
-// Logout
 function logout(req, res) {
   req.session.destroy(() => {
     res.json({ success: true, message: "تم تسجيل الخروج" });

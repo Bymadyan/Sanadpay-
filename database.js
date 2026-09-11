@@ -1,69 +1,96 @@
-const sqlite3 = require("sqlite3").verbose();
-const path = require("path");
 const fs = require("fs");
+const path = require("path");
 
 const dataDir = path.join(__dirname, "data");
+const dbFile = path.join(dataDir, "db.json");
+
+// Ensure data directory exists
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-const db = new sqlite3.Database(path.join(dataDir, "app.db"), (err) => {
-  if (err) console.error("Database connection error:", err);
-  else console.log("✅ Database connected");
-});
+// Initialize database file
+function initDb() {
+  if (!fs.existsSync(dbFile)) {
+    const initialData = {
+      users: [],
+      invoices: [],
+      payments: [],
+      nextUserId: 1,
+      nextInvoiceId: 1,
+      nextPaymentId: 1
+    };
+    fs.writeFileSync(dbFile, JSON.stringify(initialData, null, 2));
+    console.log("✅ Database initialized");
+  }
+}
 
-db.serialize(() => {
-  db.run("PRAGMA foreign_keys = ON");
+// Read database
+function readDb() {
+  if (!fs.existsSync(dbFile)) {
+    initDb();
+  }
+  const data = fs.readFileSync(dbFile, "utf8");
+  return JSON.parse(data);
+}
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      business_name TEXT NOT NULL,
-      owner_name TEXT NOT NULL,
-      phone TEXT,
-      stripe_account_id TEXT,
-      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
-    )
-  `);
+// Write database
+function writeDb(data) {
+  fs.writeFileSync(dbFile, JSON.stringify(data, null, 2));
+}
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS invoices (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      invoice_number TEXT UNIQUE NOT NULL,
-      customer_name TEXT NOT NULL,
-      customer_email TEXT,
-      customer_phone TEXT,
-      description TEXT NOT NULL,
-      amount REAL NOT NULL,
-      currency TEXT NOT NULL DEFAULT 'SAR',
-      status TEXT NOT NULL DEFAULT 'pending',
-      payment_url TEXT,
-      stripe_session_id TEXT UNIQUE,
-      payment_received_at INTEGER,
-      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
-      updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
-    )
-  `);
+// Query helpers
+function findUser(email) {
+  const db = readDb();
+  return db.users.find(u => u.email === email);
+}
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS payments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
-      stripe_session_id TEXT UNIQUE,
-      stripe_payment_intent_id TEXT,
-      amount REAL NOT NULL,
-      status TEXT NOT NULL DEFAULT 'pending',
-      paid_at INTEGER,
-      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
-    )
-  `);
+function createUser(userData) {
+  const db = readDb();
+  const userId = db.nextUserId++;
+  const user = {
+    id: userId,
+    ...userData,
+    created_at: Date.now()
+  };
+  db.users.push(user);
+  writeDb(db);
+  return user;
+}
 
-  db.run("CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id)");
-  db.run("CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status)");
-  db.run("CREATE INDEX IF NOT EXISTS idx_payments_invoice_id ON payments(invoice_id)");
-});
+function getUserById(id) {
+  const db = readDb();
+  return db.users.find(u => u.id === id);
+}
 
-module.exports = db;
+function createInvoice(invoiceData) {
+  const db = readDb();
+  const invoiceId = db.nextInvoiceId++;
+  const invoice = {
+    id: invoiceId,
+    ...invoiceData,
+    created_at: Date.now(),
+    updated_at: Date.now()
+  };
+  db.invoices.push(invoice);
+  writeDb(db);
+  return invoice;
+}
+
+function getUserInvoices(userId) {
+  const db = readDb();
+  return db.invoices
+    .filter(inv => inv.user_id === userId)
+    .sort((a, b) => b.created_at - a.created_at);
+}
+
+// Initialize on load
+initDb();
+
+module.exports = {
+  findUser,
+  createUser,
+  getUserById,
+  createInvoice,
+  getUserInvoices
+};

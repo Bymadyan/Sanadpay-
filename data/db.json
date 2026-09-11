@@ -1,0 +1,8 @@
+{
+  "users": [],
+  "invoices": [],
+  "payments": [],
+  "nextUserId": 1,
+  "nextInvoiceId": 1,
+  "nextPaymentId": 1
+}
