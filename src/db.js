@@ -108,9 +108,10 @@ const dbWrapper = {
       saveDb();
 
       const lastIdResult = db.exec("SELECT last_insert_rowid() as id");
+      const id = lastIdResult[0]?.values[0]?.[0] || null;
       return {
         changes: 1,
-        lastInsertRowid: lastIdResult[0]?.values[0]?.[0] || null
+        lastInsertRowid: id
       };
     },
     get: (...params) => {
