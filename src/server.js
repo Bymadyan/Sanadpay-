@@ -92,6 +92,35 @@ class DbSessionStore extends Store {
       if (callback) callback(err);
     }
   }
+
+  length(callback) {
+    try {
+      const result = db.prepare("SELECT COUNT(*) as count FROM sessions").get();
+      const count = result ? result.count : 0;
+      callback(null, count);
+    } catch (err) {
+      callback(err);
+    }
+  }
+
+  all(callback) {
+    try {
+      const sessions = db.prepare("SELECT * FROM sessions").all();
+      callback(null, sessions);
+    } catch (err) {
+      callback(err);
+    }
+  }
+
+  touch(sid, sess, callback) {
+    try {
+      const expire = (sess.cookie && sess.cookie.expires) ? sess.cookie.expires.getTime() : Date.now() + 7 * 24 * 60 * 60 * 1000;
+      db.prepare("UPDATE sessions SET expire = ? WHERE sid = ?").run(expire, sid);
+      callback(null);
+    } catch (err) {
+      callback(err);
+    }
+  }
 }
 
 async function start() {
