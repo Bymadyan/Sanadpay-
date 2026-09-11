@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التحكم - SanadPay</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>💳 SanadPay</h1>
+      <nav>
+        <span id="userName"></span>
+        <a href="#" onclick="logout()">تسجيل الخروج</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="dashboard-header">
+        <h2>مرحباً <span id="ownerName"></span></h2>
+        <p id="businessName"></p>
+      </div>
+
+      <div class="dashboard-grid">
+        <!-- Create Invoice Form -->
+        <div>
+          <div class="card">
+            <h3>إنشاء فاتورة جديدة</h3>
+
+            <form id="invoiceForm">
+              <div class="form-group">
+                <label for="customer_name">اسم العميل</label>
+                <input type="text" id="customer_name" name="customer_name" required>
+              </div>
+
+              <div class="form-group">
+                <label for="customer_email">البريد الإلكتروني (اختياري)</label>
+                <input type="email" id="customer_email" name="customer_email">
+              </div>
+
+              <div class="form-group">
+                <label for="amount">المبلغ (ريال)</label>
+                <input type="number" id="amount" name="amount" step="0.01" required>
+              </div>
+
+              <div class="form-group">
+                <label for="description">الوصف</label>
+                <textarea id="description" name="description" required></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%;">إنشاء الفاتورة</button>
+            </form>
+
+            <div id="formError" style="color: var(--danger); margin-top: 1rem; display: none;"></div>
+          </div>
+        </div>
+
+        <!-- Invoices List -->
+        <div>
+          <h3 style="margin-bottom: 1.5rem;">الفواتير</h3>
+          <div class="invoice-list" id="invoicesList">
+            <p style="color: var(--text-muted);">جاري التحميل...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h2>✅ تم إنشاء الفاتورة</h2>
+      <p>شارك الرابط أو رمز QR مع العميل</p>
+
+      <div class="qr-code">
+        <img id="qrCode" src="" alt="QR Code">
+      </div>
+
+      <div class="payment-link" id="paymentLink"></div>
+
+      <button class="btn btn-primary" onclick="copyLink()" style="width: 100%; margin-bottom: 0.5rem;">
+        نسخ الرابط
+      </button>
+      <button class="btn btn-secondary" onclick="closeModal()" style="width: 100%;">
+        إغلاق
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Load user data
+    fetch('/api/user', { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.user) {
+          document.getElementById('userName').textContent = data.user.email;
+          document.getElementById('ownerName').textContent = data.user.owner_name;
+          document.getElementById('businessName').textContent = data.user.business_name;
+          loadInvoices();
+        }
+      })
+      .catch(() => window.location.href = '/login');
+
+    // Create invoice
+    document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formError = document.getElementById('formError');
+      formError.style.display = 'none';
+
+      const customer_name = document.getElementById('customer_name').value;
+      const customer_email = document.getElementById('customer_email').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+      const description = document.getElementById('description').value;
+
+      try {
+        const res = await fetch('/api/invoices/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ customer_name, customer_email, amount, description })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('qrCode').src = data.qr_code;
+          document.getElementById('paymentLink').textContent = data.payment_url;
+          document.getElementById('modal').style.display = 'flex';
+          document.getElementById('invoiceForm').reset();
+          loadInvoices();
+        } else {
+          formError.textContent = data.error || 'خطأ في إنشاء الفاتورة';
+          formError.style.display = 'block';
+        }
+      } catch (err) {
+        formError.textContent = 'خطأ في الاتصال بالخادم';
+        formError.style.display = 'block';
+      }
+    });
+
+    // Load invoices
+    function loadInvoices() {
+      fetch('/api/invoices/list', { credentials: 'include' })
+        .then(r => r.json())
+        .then(data => {
+          const list = document.getElementById('invoicesList');
+          if (!data.invoices || data.invoices.length === 0) {
+            list.innerHTML = '<p style="color: var(--text-muted);">لا توجد فواتير</p>';
+            return;
+          }
+
+          list.innerHTML = data.invoices.map(inv => `
+            <div class="invoice-item">
+              <div class="invoice-info">
+                <h3>${inv.customer_name}</h3>
+                <p>${inv.invoice_number}</p>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-weight: bold; margin-bottom: 0.5rem;">${inv.amount} ريال</div>
+                <span class="invoice-status ${inv.status}">${inv.status === 'paid' ? '✅ مدفوعة' : '⏳ معلقة'}</span>
+              </div>
+            </div>
+          `).join('');
+        })
+        .catch(() => {});
+    }
+
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+    }
+
+    function copyLink() {
+      const link = document.getElementById('paymentLink').textContent;
+      navigator.clipboard.writeText(link).then(() => {
+        alert('تم نسخ الرابط');
+      });
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>
