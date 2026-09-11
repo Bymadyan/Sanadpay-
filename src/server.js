@@ -1,7 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
-const SQLiteStore = require("connect-sqlite3")(session);
 const path = require("path");
 const fs = require("fs");
 const db = require("./db");
@@ -23,6 +22,111 @@ app.use(express.urlencoded({ extended: true }));
 
 const PORT = process.env.PORT || 3000;
 
+// Custom Database-backed Session Store
+const Store = require("express-session").Store;
+
+class DbSessionStore extends Store {
+  constructor() {
+    super();
+  }
+
+  createSession(req, sess) {
+    return sess;
+  }
+
+  get(sid, callback) {
+    try {
+      console.log(`🔍 Session GET: ${sid}`);
+      const sess = db.prepare("SELECT sess FROM sessions WHERE sid = ?").get(sid);
+      if (!sess) {
+        console.log(`❌ Session not found: ${sid}`);
+        return callback(null, null);
+      }
+      const data = JSON.parse(sess.sess);
+      console.log(`✅ Session found: ${sid}`, data.user ? `(user: ${data.user.email})` : '');
+      callback(null, data);
+    } catch (err) {
+      console.error(`❌ Session GET error: ${err.message}`);
+      callback(err);
+    }
+  }
+
+  set(sid, sess, callback) {
+    try {
+      console.log(`💾 Session SET: ${sid}`, sess.user ? `(user: ${sess.user.email})` : '');
+      const expire = (sess.cookie && sess.cookie.expires) ? sess.cookie.expires.getTime() : Date.now() + 7 * 24 * 60 * 60 * 1000;
+      const sessJson = JSON.stringify(sess);
+
+      const existing = db.prepare("SELECT sid FROM sessions WHERE sid = ?").get(sid);
+      if (existing) {
+        db.prepare("UPDATE sessions SET sess = ?, expire = ? WHERE sid = ?").run(sessJson, expire, sid);
+        console.log(`✅ Session updated: ${sid}`);
+      } else {
+        db.prepare("INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, ?)").run(sid, sessJson, expire);
+        console.log(`✅ Session inserted: ${sid}`);
+      }
+
+      if (callback) callback(null);
+    } catch (err) {
+      console.error(`❌ Session SET error: ${err.message}`);
+      if (callback) callback(err);
+    }
+  }
+
+  destroy(sid, callback) {
+    try {
+      console.log(`🗑️  Session DESTROY: ${sid}`);
+      db.prepare("DELETE FROM sessions WHERE sid = ?").run(sid);
+      console.log(`✅ Session deleted: ${sid}`);
+      if (callback) callback(null);
+    } catch (err) {
+      console.error(`❌ Session DESTROY error: ${err.message}`);
+      if (callback) callback(err);
+    }
+  }
+
+  clear(callback) {
+    try {
+      console.log(`🗑️  Session CLEAR: all`);
+      db.prepare("DELETE FROM sessions").run();
+      console.log(`✅ All sessions cleared`);
+      if (callback) callback(null);
+    } catch (err) {
+      console.error(`❌ Session CLEAR error: ${err.message}`);
+      if (callback) callback(err);
+    }
+  }
+
+  length(callback) {
+    try {
+      const result = db.prepare("SELECT COUNT(*) as count FROM sessions").get();
+      const count = result ? result.count : 0;
+      callback(null, count);
+    } catch (err) {
+      callback(err);
+    }
+  }
+
+  all(callback) {
+    try {
+      const sessions = db.prepare("SELECT * FROM sessions").all();
+      callback(null, sessions);
+    } catch (err) {
+      callback(err);
+    }
+  }
+
+  touch(sid, sess, callback) {
+    try {
+      const expire = (sess.cookie && sess.cookie.expires) ? sess.cookie.expires.getTime() : Date.now() + 7 * 24 * 60 * 60 * 1000;
+      db.prepare("UPDATE sessions SET expire = ? WHERE sid = ?").run(expire, sid);
+      callback(null);
+    } catch (err) {
+      callback(err);
+    }
+  }
+}
+
 async function start() {
   try {
     console.log(`🚀 Starting SanadPay (NODE_ENV: ${process.env.NODE_ENV})`);
@@ -31,16 +135,8 @@ async function start() {
     await db.initDb();
     console.log("✓ Database initialized");
 
-    // Setup session database path
-    const dbPath = path.join(__dirname, "..", "data", "sessions.sqlite");
-
-    // Use SQLite-backed session store
-    const sessionStore = new SQLiteStore({
-      db: dbPath,
-      dir: path.join(__dirname, "..", "data"),
-      concurrentDb: false
-    });
-
+    // Use database-backed session store
+    const sessionStore = new DbSessionStore();
     app.use(session({
       store: sessionStore,
       secret: process.env.SESSION_SECRET || "dev-secret-key",
