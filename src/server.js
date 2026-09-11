@@ -11,6 +11,9 @@ const paymentRoutes = require("./routes/payments");
 
 const app = express();
 
+// Trust proxy for Railway/load balancers
+app.set("trust proxy", 1);
+
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
@@ -20,7 +23,9 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 // Custom Database-backed Session Store
-class DbSessionStore extends require("events").EventEmitter {
+const Store = require("express-session").Store;
+
+class DbSessionStore extends Store {
   constructor() {
     super();
   }
@@ -57,6 +62,15 @@ class DbSessionStore extends require("events").EventEmitter {
   destroy(sid, callback) {
     try {
       db.prepare("DELETE FROM sessions WHERE sid = ?").run(sid);
+      if (callback) callback(null);
+    } catch (err) {
+      if (callback) callback(err);
+    }
+  }
+
+  clear(callback) {
+    try {
+      db.prepare("DELETE FROM sessions").run();
       if (callback) callback(null);
     } catch (err) {
       if (callback) callback(err);
