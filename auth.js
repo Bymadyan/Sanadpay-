@@ -13,13 +13,14 @@ async function signup(req, res) {
       return res.status(400).json({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" });
     }
 
-    if (findUser(email)) {
+    const existing = await findUser(email);
+    if (existing) {
       return res.status(400).json({ error: "البريد الإلكتروني مستخدم بالفعل" });
     }
 
     const password_hash = bcrypt.hashSync(password, 10);
 
-    const user = createUser({
+    const user = await createUser({
       email,
       password_hash,
       business_name,
@@ -50,7 +51,7 @@ async function login(req, res) {
       return res.status(400).json({ error: "البريد والرقم السري مطلوبان" });
     }
 
-    const user = findUser(email);
+    const user = await findUser(email);
     if (!user) {
       return res.status(401).json({ error: "بيانات دخول غير صحيحة" });
     }

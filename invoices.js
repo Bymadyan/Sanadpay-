@@ -44,7 +44,7 @@ async function createInvoiceEndpoint(req, res) {
         customer_email: customer_email || undefined
       });
 
-      createInvoice({
+      await createInvoice({
         user_id,
         invoice_number,
         customer_name,
@@ -80,7 +80,7 @@ async function createInvoiceEndpoint(req, res) {
 async function listInvoices(req, res) {
   try {
     const user_id = req.session.user.id;
-    const invoices = getUserInvoices(user_id);
+    const invoices = await getUserInvoices(user_id);
     res.json({ invoices });
   } catch (err) {
     console.error("List invoices error:", err);

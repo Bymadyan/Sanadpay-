@@ -1,96 +1,115 @@
-const fs = require("fs");
-const path = require("path");
+const { createClient } = require("@supabase/supabase-js");
 
-const dataDir = path.join(__dirname, "data");
-const dbFile = path.join(dataDir, "db.json");
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 
-// Ensure data directory exists
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+if (!supabaseUrl || !supabaseKey) {
+  console.error("❌ Missing Supabase credentials - SUPABASE_URL and SUPABASE_KEY required");
+  process.exit(1);
 }
 
-// Initialize database file
-function initDb() {
-  if (!fs.existsSync(dbFile)) {
-    const initialData = {
-      users: [],
-      invoices: [],
-      payments: [],
-      nextUserId: 1,
-      nextInvoiceId: 1,
-      nextPaymentId: 1
-    };
-    fs.writeFileSync(dbFile, JSON.stringify(initialData, null, 2));
-    console.log("✅ Database initialized");
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function findUser(email) {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email)
+      .single();
+
+    if (error && error.code !== "PGRST116") throw error;
+    return data || null;
+  } catch (err) {
+    console.error("Error finding user:", err);
+    throw err;
   }
 }
 
-// Read database
-function readDb() {
-  if (!fs.existsSync(dbFile)) {
-    initDb();
+async function createUser(userData) {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .insert([userData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error creating user:", err);
+    throw err;
   }
-  const data = fs.readFileSync(dbFile, "utf8");
-  return JSON.parse(data);
 }
 
-// Write database
-function writeDb(data) {
-  fs.writeFileSync(dbFile, JSON.stringify(data, null, 2));
+async function getUserById(id) {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error && error.code !== "PGRST116") throw error;
+    return data || null;
+  } catch (err) {
+    console.error("Error getting user:", err);
+    throw err;
+  }
 }
 
-// Query helpers
-function findUser(email) {
-  const db = readDb();
-  return db.users.find(u => u.email === email);
+async function createInvoice(invoiceData) {
+  try {
+    const { data, error } = await supabase
+      .from("invoices")
+      .insert([invoiceData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error creating invoice:", err);
+    throw err;
+  }
 }
 
-function createUser(userData) {
-  const db = readDb();
-  const userId = db.nextUserId++;
-  const user = {
-    id: userId,
-    ...userData,
-    created_at: Date.now()
-  };
-  db.users.push(user);
-  writeDb(db);
-  return user;
+async function getUserInvoices(userId) {
+  try {
+    const { data, error } = await supabase
+      .from("invoices")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.error("Error getting invoices:", err);
+    throw err;
+  }
 }
 
-function getUserById(id) {
-  const db = readDb();
-  return db.users.find(u => u.id === id);
+// Test connection
+async function testConnection() {
+  try {
+    const { error } = await supabase.auth.getSession();
+    if (!error) {
+      console.log("✅ Supabase connected");
+      return true;
+    }
+  } catch (err) {
+    console.error("Connection test failed:", err);
+  }
+  return false;
 }
-
-function createInvoice(invoiceData) {
-  const db = readDb();
-  const invoiceId = db.nextInvoiceId++;
-  const invoice = {
-    id: invoiceId,
-    ...invoiceData,
-    created_at: Date.now(),
-    updated_at: Date.now()
-  };
-  db.invoices.push(invoice);
-  writeDb(db);
-  return invoice;
-}
-
-function getUserInvoices(userId) {
-  const db = readDb();
-  return db.invoices
-    .filter(inv => inv.user_id === userId)
-    .sort((a, b) => b.created_at - a.created_at);
-}
-
-// Initialize on load
-initDb();
 
 module.exports = {
+  supabase,
   findUser,
   createUser,
   getUserById,
   createInvoice,
-  getUserInvoices
+  getUserInvoices,
+  testConnection
 };
