@@ -32,47 +32,63 @@ class DbSessionStore extends Store {
 
   get(sid, callback) {
     try {
+      console.log(`🔍 Session GET: ${sid}`);
       const sess = db.prepare("SELECT sess FROM sessions WHERE sid = ?").get(sid);
-      if (!sess) return callback(null, null);
+      if (!sess) {
+        console.log(`❌ Session not found: ${sid}`);
+        return callback(null, null);
+      }
       const data = JSON.parse(sess.sess);
+      console.log(`✅ Session found: ${sid}`, data.user ? `(user: ${data.user.email})` : '');
       callback(null, data);
     } catch (err) {
+      console.error(`❌ Session GET error: ${err.message}`);
       callback(err);
     }
   }
 
   set(sid, sess, callback) {
     try {
+      console.log(`💾 Session SET: ${sid}`, sess.user ? `(user: ${sess.user.email})` : '');
       const expire = (sess.cookie && sess.cookie.expires) ? sess.cookie.expires.getTime() : Date.now() + 7 * 24 * 60 * 60 * 1000;
       const sessJson = JSON.stringify(sess);
 
       const existing = db.prepare("SELECT sid FROM sessions WHERE sid = ?").get(sid);
       if (existing) {
         db.prepare("UPDATE sessions SET sess = ?, expire = ? WHERE sid = ?").run(sessJson, expire, sid);
+        console.log(`✅ Session updated: ${sid}`);
       } else {
         db.prepare("INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, ?)").run(sid, sessJson, expire);
+        console.log(`✅ Session inserted: ${sid}`);
       }
 
       if (callback) callback(null);
     } catch (err) {
+      console.error(`❌ Session SET error: ${err.message}`);
       if (callback) callback(err);
     }
   }
 
   destroy(sid, callback) {
     try {
+      console.log(`🗑️  Session DESTROY: ${sid}`);
       db.prepare("DELETE FROM sessions WHERE sid = ?").run(sid);
+      console.log(`✅ Session deleted: ${sid}`);
       if (callback) callback(null);
     } catch (err) {
+      console.error(`❌ Session DESTROY error: ${err.message}`);
       if (callback) callback(err);
     }
   }
 
   clear(callback) {
     try {
+      console.log(`🗑️  Session CLEAR: all`);
       db.prepare("DELETE FROM sessions").run();
+      console.log(`✅ All sessions cleared`);
       if (callback) callback(null);
     } catch (err) {
+      console.error(`❌ Session CLEAR error: ${err.message}`);
       if (callback) callback(err);
     }
   }

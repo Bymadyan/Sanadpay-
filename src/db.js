@@ -107,8 +107,17 @@ const dbWrapper = {
       stmt.free();
       saveDb();
 
-      const lastIdResult = db.exec("SELECT last_insert_rowid() as id");
-      const id = lastIdResult[0]?.values[0]?.[0] || null;
+      let id = null;
+      try {
+        const lastIdStmt = db.prepare("SELECT last_insert_rowid() as id");
+        if (lastIdStmt.step()) {
+          id = lastIdStmt.getAsObject().id;
+        }
+        lastIdStmt.free();
+      } catch (e) {
+        console.error("Error getting last insert id:", e);
+      }
+
       return {
         changes: 1,
         lastInsertRowid: id

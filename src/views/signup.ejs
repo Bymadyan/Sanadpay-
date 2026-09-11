@@ -63,14 +63,22 @@
           body: JSON.stringify(data)
         });
 
+        console.log('Signup response status:', res.status);
+        console.log('Signup response headers:', res.headers);
+
         const result = await res.json();
+        console.log('Signup response body:', result);
+
         if (result.success) {
+          console.log('Signup successful, redirecting to:', result.redirect);
           window.location.href = result.redirect;
         } else {
+          console.log('Signup failed:', result.error);
           alert(result.error);
         }
       } catch (err) {
-        alert('Error creating account');
+        console.error('Signup error:', err);
+        alert('Error creating account: ' + err.message);
       }
     });
   </script>

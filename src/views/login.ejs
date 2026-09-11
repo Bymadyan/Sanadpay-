@@ -53,14 +53,22 @@
           body: JSON.stringify(data)
         });
 
+        console.log('Login response status:', res.status);
+        console.log('Login response headers:', res.headers);
+
         const result = await res.json();
+        console.log('Login response body:', result);
+
         if (result.success) {
+          console.log('Login successful, redirecting to:', result.redirect);
           window.location.href = result.redirect;
         } else {
+          console.log('Login failed:', result.error);
           alert(result.error);
         }
       } catch (err) {
-        alert('Error logging in');
+        console.error('Login error:', err);
+        alert('Error logging in: ' + err.message);
       }
     });
   </script>

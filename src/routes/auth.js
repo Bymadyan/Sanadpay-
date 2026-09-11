@@ -33,12 +33,14 @@ router.post("/signup", async (req, res) => {
       owner_name
     };
 
+    console.log(`📝 Saving session for ${email}, session ID:`, req.sessionID);
     req.session.save((err) => {
       if (err) {
         console.error(`❌ Session save error: ${err.message}`);
         return res.status(500).json({ error: "Error saving session" });
       }
-      console.log(`✅ Session saved for ${email}`);
+      console.log(`✅ Session saved for ${email}, session ID: ${req.sessionID}`);
+      console.log(`📤 Setting cookie with session ID: ${req.sessionID}`);
       res.json({ success: true, redirect: "/dashboard" });
     });
   } catch (err) {
@@ -79,12 +81,14 @@ router.post("/login", async (req, res) => {
       owner_name: user.owner_name
     };
 
+    console.log(`📝 Saving session for ${email}, session ID:`, req.sessionID);
     req.session.save((err) => {
       if (err) {
         console.error(`❌ Session save error: ${err.message}`);
         return res.status(500).json({ error: "Error saving session" });
       }
-      console.log(`✅ Session saved for ${email}, redirecting to /dashboard`);
+      console.log(`✅ Session saved for ${email}, session ID: ${req.sessionID}`);
+      console.log(`📤 Setting cookie with session ID: ${req.sessionID}`);
       res.json({ success: true, redirect: "/dashboard" });
     });
   } catch (err) {
