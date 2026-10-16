@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cieloseta | بخاخ مزيل رائحة الإبط</title>
+  <meta name="description" content="بخاخ Cieloseta للتحكم برائحة الإبط بتركيز جليكوليك أسيد 7% - بدون عطر - 100 مل">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">cieloseta</span>
+  </header>
+
+  <main class="product">
+    <section class="gallery">
+      <div class="main-image">
+        <img id="mainImage" src="/images/bottle.jpg" alt="بخاخ Cieloseta لمزيل رائحة الإبط 100 مل" width="900" height="1217">
+      </div>
+      <div class="thumbs">
+        <button type="button" class="thumb active" data-src="/images/bottle.jpg" aria-label="صورة العبوة">
+          <img src="/images/bottle.jpg" alt="">
+        </button>
+        <button type="button" class="thumb" data-src="/images/box.jpg" aria-label="صورة العلبة">
+          <img src="/images/box.jpg" alt="">
+        </button>
+      </div>
+    </section>
+
+    <section class="details">
+      <span class="tag">للرجال والنساء</span>
+      <h1>بخاخ مزيل رائحة الإبط</h1>
+      <p class="subtitle">Underarm Odor Control Mist · 100 ml</p>
+
+      <div class="price">
+        <span class="amount">99</span>
+        <span class="currency">درهم</span>
+      </div>
+      <p class="shipping-note">التوصيل داخل الإمارات</p>
+
+      <form action="/checkout" method="POST" class="buy-form">
+        <button type="submit" class="buy-btn">اشترِ الآن</button>
+      </form>
+      <p class="secure">🔒 دفع آمن ومشفّر عبر Stripe</p>
+
+      <ul class="features">
+        <li><span class="icon">24h</span>حماية من الرائحة لمدة 24 ساعة</li>
+        <li><span class="icon">✦</span>يقضي على البكتيريا المسببة للرائحة</li>
+        <li><span class="icon">💧</span>يهدّئ ويرطّب البشرة</li>
+        <li><span class="icon">✧</span>يفتّح منطقة الإبط</li>
+        <li><span class="icon">🌿</span>مناسب للبشرة الحساسة · بدون عطر</li>
+      </ul>
+
+      <div class="ingredients">
+        <h2>المكونات الفعّالة</h2>
+        <div class="chips">
+          <span>جليكوليك أسيد 7%</span>
+          <span>هيالورونيك أسيد</span>
+          <span>سيراميد</span>
+          <span>ألانتوين</span>
+          <span>مستخلص السنتيلا (Gotu Kola)</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">© Cieloseta · جميع الحقوق محفوظة</footer>
+
+  <script>
+    const mainImage = document.getElementById("mainImage");
+    document.querySelectorAll(".thumb").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".thumb").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        mainImage.src = btn.dataset.src;
+      });
+    });
+
+    document.querySelector(".buy-form").addEventListener("submit", e => {
+      const btn = e.target.querySelector(".buy-btn");
+      btn.disabled = true;
+      btn.textContent = "جارٍ التحويل لصفحة الدفع…";
+    });
+
+    // Re-enable the button if the user comes back with the browser's back button
+    window.addEventListener("pageshow", () => {
+      const btn = document.querySelector(".buy-btn");
+      btn.disabled = false;
+      btn.textContent = "اشترِ الآن";
+    });
+  </script>
+</body>
+</html>
