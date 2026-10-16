@@ -1,0 +1,12 @@
+<div class="simple-page">
+  <h1>{{ collection.title }}</h1>
+  <div class="grid">
+    {%- for p in collection.products -%}
+      <a href="{{ p.url }}" class="card">
+        {%- if p.featured_image -%}{{ p.featured_image | image_url: width: 500 | image_tag: alt: p.title }}{%- endif -%}
+        <span>{{ p.title }}</span>
+        <strong>{{ p.price | money }}</strong>
+      </a>
+    {%- endfor -%}
+  </div>
+</div>

@@ -1,0 +1,55 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-product",
+      "blocks": {
+        "f1": {
+          "type": "feature",
+          "settings": {
+            "icon": "24h",
+            "text": "24-hour odor control"
+          }
+        },
+        "f2": {
+          "type": "feature",
+          "settings": {
+            "icon": "✦",
+            "text": "Eliminates odor-causing bacteria"
+          }
+        },
+        "f3": {
+          "type": "feature",
+          "settings": {
+            "icon": "💧",
+            "text": "Soothes & hydrates"
+          }
+        },
+        "f4": {
+          "type": "feature",
+          "settings": {
+            "icon": "✧",
+            "text": "Brightens underarms"
+          }
+        },
+        "f5": {
+          "type": "feature",
+          "settings": {
+            "icon": "🌿",
+            "text": "Suitable for sensitive skin · Fragrance free"
+          }
+        }
+      },
+      "block_order": [
+        "f1",
+        "f2",
+        "f3",
+        "f4",
+        "f5"
+      ],
+      "settings": {}
+    }
+  },
+  "order": [
+    "main"
+  ]
+}
