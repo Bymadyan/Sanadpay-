@@ -15,7 +15,7 @@ const PRODUCT = {
   description: "بخاخ مزيل رائحة الإبط - جليكوليك أسيد 7% - بدون عطر",
   price: 99, // AED
   currency: "aed",
-  image: "/images/bottle.jpg"
+  image: "/images/product.jpg"
 };
 
 app.set("trust proxy", 1);

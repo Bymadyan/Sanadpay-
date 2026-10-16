@@ -18,15 +18,7 @@
   <main class="product">
     <section class="gallery">
       <div class="main-image">
-        <img id="mainImage" src="/images/bottle.jpg" alt="بخاخ Cieloseta لمزيل رائحة الإبط 100 مل" width="900" height="1217">
-      </div>
-      <div class="thumbs">
-        <button type="button" class="thumb active" data-src="/images/bottle.jpg" aria-label="صورة العبوة">
-          <img src="/images/bottle.jpg" alt="">
-        </button>
-        <button type="button" class="thumb" data-src="/images/box.jpg" aria-label="صورة العلبة">
-          <img src="/images/box.jpg" alt="">
-        </button>
+        <img id="mainImage" src="/images/product.jpg" alt="بخاخ Cieloseta لمزيل رائحة الإبط 100 مل مع العلبة" width="1000" height="1000">
       </div>
     </section>
 
@@ -70,15 +62,6 @@
   <footer class="footer">© Cieloseta · جميع الحقوق محفوظة</footer>
 
   <script>
-    const mainImage = document.getElementById("mainImage");
-    document.querySelectorAll(".thumb").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".thumb").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        mainImage.src = btn.dataset.src;
-      });
-    });
-
     document.querySelector(".buy-form").addEventListener("submit", e => {
       const btn = e.target.querySelector(".buy-btn");
       btn.disabled = true;
