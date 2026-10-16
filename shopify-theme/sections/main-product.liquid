@@ -42,11 +42,11 @@
     <div class="buy-form">
       {%- if p == blank or variant == blank -%}
         <p class="shipping-note">Select a product for this section in the theme editor.</p>
-      {%- elsif variant.available -%}
+      {%- elsif variant.inventory_management != blank and variant.inventory_policy == 'deny' and variant.inventory_quantity < 1 -%}
+        <button type="button" class="buy-btn" disabled>Sold out</button>
+      {%- else -%}
         {%- comment -%} Cart permalink: skips the cart and opens checkout (address + payment) directly {%- endcomment -%}
         <a href="{{ routes.cart_url }}/{{ variant.id }}:1" class="buy-btn">{{ section.settings.button_label }}</a>
-      {%- else -%}
-        <button type="button" class="buy-btn" disabled>Sold out</button>
       {%- endif -%}
     </div>
     {%- if section.settings.secure_note != blank -%}
